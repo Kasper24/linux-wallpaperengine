@@ -52,7 +52,6 @@ set(
     )
 
 set(CEF_ROOT $ENV{CEF_ROOT})
-set(CEF_INCLUDE_PATH ${CEF_ROOT})
 
 include_directories(
     ${MPV_INCLUDE_DIR}
@@ -64,7 +63,7 @@ include_directories(
     ${FREEIMAGE_INCLUDE_DIR}
     ${PULSEAUDIO_INCLUDE_DIR}
     src
-    ${CEF_INCLUDE_PATH}
+    ${CEF_ROOT}
     ${CMAKE_SOURCE_DIR}
     include)
 
