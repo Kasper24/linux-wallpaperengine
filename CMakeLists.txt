@@ -36,62 +36,23 @@ find_package(FFMPEG REQUIRED)
 find_package(FreeImage REQUIRED)
 find_package(PulseAudio REQUIRED)
 
-# Download CEF of specified version for current platform
-# Specify the CEF distribution version.
-set(CEF_VERSION "120.1.10+g3ce3184+chromium-120.0.6099.129")
-# Determine the platform.
-if("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
-  if("${PROJECT_ARCH}" STREQUAL "arm64")
-    set(CEF_PLATFORM "macosarm64")
-  elseif("${PROJECT_ARCH}" STREQUAL "x86_64")
-    set(CEF_PLATFORM "macosx64")
-  elseif("${CMAKE_HOST_SYSTEM_PROCESSOR}" STREQUAL "arm64")
-    set(PROJECT_ARCH "arm64")
-    set(CEF_PLATFORM "macosarm64")
-  else()
-    set(PROJECT_ARCH "x86_64")
-    set(CEF_PLATFORM "macosx64")
-  endif()
-elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
-  if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "arm")
-    set(CEF_PLATFORM "linuxarm")
-  elseif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "arm64")
-    set(CEF_PLATFORM "linuxarm64")
-  elseif(CMAKE_SIZEOF_VOID_P MATCHES 8)
-    set(CEF_PLATFORM "linux64")
-  else()
-    message(FATAL_ERROR "Linux x86 32-bit builds are discontinued.")
-  endif()
-elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
-  if("${CMAKE_CXX_COMPILER_ARCHITECTURE_ID}" STREQUAL "ARM64")
-    set(CEF_PLATFORM "windowsarm64")
-  elseif(CMAKE_SIZEOF_VOID_P MATCHES 8)
-    set(CEF_PLATFORM "windows64")
-  else()
-    set(CEF_PLATFORM "windows32")
-  endif()
-endif()
-include(DownloadCEF)
-DownloadCEF("${CEF_PLATFORM}" "${CEF_VERSION}" "${CMAKE_SOURCE_DIR}/third_party/cef")
-
-find_package(CEF REQUIRED)
-
 set(
     CMAKE_RUNTIME_OUTPUT_DIRECTORY
     ${CMAKE_CURRENT_BINARY_DIR}/build
     )
-	
+
 set(
     CMAKE_LIBRARY_OUTPUT_DIRECTORY
     ${CMAKE_CURRENT_BINARY_DIR}/lib
     )
-	
+
 set(
     TARGET_OUTPUT_DIRECTORY
     ${CMAKE_CURRENT_BINARY_DIR}/build
     )
 
-add_subdirectory(${CEF_LIBCEF_DLL_WRAPPER_PATH} libcef_dll_wrapper)
+set(CEF_ROOT $ENV{CEF_ROOT})
+set(CEF_INCLUDE_PATH ${CEF_ROOT})
 
 include_directories(
     ${MPV_INCLUDE_DIR}
@@ -106,15 +67,6 @@ include_directories(
     ${CEF_INCLUDE_PATH}
     ${CMAKE_SOURCE_DIR}
     include)
-
-
-add_library(ceflib SHARED IMPORTED)
-set_target_properties(ceflib 
-    PROPERTIES IMPORTED_LOCATION ${TARGET_OUTPUT_DIRECTORY}/libcef.so)
-
-ADD_LOGICAL_TARGET("libcef_lib" "${CEF_LIB_DEBUG}" "${CEF_LIB_RELEASE}")
-# SET_CEF_TARGET_OUT_DIR()
-include_directories(${_CEF_ROOT})
 
 # try to enable wayland builds when possible
 pkg_check_modules(WAYLAND_SUPPORT wayland-cursor wayland-protocols egl wayland-egl)
@@ -423,16 +375,6 @@ add_executable(
     ${WAYLAND_SOURCES}
     ${X11_SOURCES}
 )
-
-COPY_FILES(linux-wallpaperengine "${CEF_BINARY_FILES}" "${CEF_BINARY_DIR}" "${TARGET_OUTPUT_DIRECTORY}")
-COPY_FILES(linux-wallpaperengine "${CEF_RESOURCE_FILES}" "${CEF_RESOURCE_DIR}" "${TARGET_OUTPUT_DIRECTORY}")
-
-SET_EXECUTABLE_TARGET_PROPERTIES(linux-wallpaperengine)
-add_dependencies(linux-wallpaperengine libcef_dll_wrapper)
-
-# Need to remove libvulkan, otherwise will get error on  linking:
-# /usr/bin/ld: /usr/lib/libmpv.so: undefined reference to `vkCreateXlibSurfaceKHR'
-file(REMOVE "${CEF_BINARY_DIR_DEBUG}/libvulkan.so.1" "${CEF_BINARY_DIR_RELEASE}/libvulkan.so.1") 
 target_link_libraries (linux-wallpaperengine PUBLIC
     ${OPENGL_LIBRARIES}
     ${GLEW_LIBRARIES}
@@ -445,8 +387,8 @@ target_link_libraries (linux-wallpaperengine PUBLIC
     ${MPV_LIBRARY}
     ${PULSEAUDIO_LIBRARY}
     glfw
-    libcef_lib libcef_dll_wrapper)
-
+    "${CEF_ROOT}/lib/libcef.so"
+    "${CEF_ROOT}/lib/libcef_dll_wrapper.a")
 
 if (WAYLAND_SUPPORT_FOUND)
     target_link_libraries(linux-wallpaperengine PUBLIC
