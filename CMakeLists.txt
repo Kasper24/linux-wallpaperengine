@@ -51,8 +51,6 @@ set(
     ${CMAKE_CURRENT_BINARY_DIR}/build
     )
 
-set(CEF_ROOT $ENV{CEF_ROOT})
-
 include_directories(
     ${MPV_INCLUDE_DIR}
     ${XRANDR_INCLUDE_DIR}
@@ -374,6 +372,7 @@ add_executable(
     ${WAYLAND_SOURCES}
     ${X11_SOURCES}
 )
+
 target_link_libraries (linux-wallpaperengine PUBLIC
     ${OPENGL_LIBRARIES}
     ${GLEW_LIBRARIES}
